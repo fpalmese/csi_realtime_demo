@@ -1,0 +1,242 @@
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.3.0/font/bootstrap-icons.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<%+header%>
+
+<% filesDirectory="/mnt/sda1/testDirectory"
+--lua functions defined here
+function split(inputstr, sep)
+        if sep == nil then
+                sep = "%s"
+        end
+        local t={}
+        for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
+                table.insert(t, str)
+        end
+        return t
+end
+
+
+%>
+
+<h2><%:CSI Real-Time Monitor%></h2>
+<div>Here you can Analyse CSI in Real-Time</div>
+
+<div id="main-view">
+	<div>
+		<form class="control-group" id="csi-rt-control" >
+				<h5>Window duration (s)</h5>
+				<input name="win-duration" type="number" id="win-duration" style="width:60px" min="0.05" max="10" value="0.5" step="0.05"></input>
+				<div style="display:inline-block;position:relative;left:1%;max-width:15px;">
+					<div id="update-duration" class="update-btn" style="border:1px solid #4a4; padding:2px 11px;border-radius:14px">
+					<i class="bi bi-arrow-repeat clickable"></i>
+					</div>
+				</div>
+				</br></br>
+
+				<h5>Processing Type</h5>
+				<div id="processing-type">
+					Aggregate Value <input name="processing-type" type="radio" id="processing-type-1" value="1" checked="checked"></input></br>
+					CSI Image Plot <input name="processing-type" type="radio" id="processing-type-2" value="2"></input>
+				</div>
+				</br>
+
+				<div id="capture-mode">
+					<h5>Capture Mode</h5>
+					Live <input name="capture-mode" type="radio" id="capture-mode-1" value="LIVE" checked="checked"></input></br>
+					PCAP <input name="capture-mode" type="radio" id="capture-mode-2" value="PCAP"></input>
+				</div>
+				</br>
+
+				<h5>Devices:</h5>
+				<div id="processing-type">
+					All (3) <input name="device-select" type="radio" id="device-select0" value="0" checked="checked"></input></br>
+					Camera  <input name="device-select" type="radio" id="device-select1" value="1"></input></br>
+					ESP8266  <input name="device-select" type="radio" id="device-select2" value="2"></input></br>
+					ESP32  <input name="device-select" type="radio" id="device-select2" value="3"></input>
+				</div>
+		</form>
+		</br></br>
+		<div id="realtime-error" class="cbi-section-error" data-index="10" style="display:none">
+		Error in the request, try again...
+		</div>
+		</br>
+		<button id="start-button" class="btn cbi-button cbi-button-save">Start</button>
+		<button id="stop-button" class="btn cbi-button cbi-button-reset">Stop</button>
+		</br></br>
+	</div>
+</div>
+
+
+
+<script type="text/javascript">
+
+(function() {
+	String.prototype.replaceAll = function(search, replacement) {
+	    var target = this;
+	    return target.replace(new RegExp(search, 'g'), replacement);
+	};
+	
+	window.onload = function(){
+		var active = false;
+		var startButton = document.getElementById("start-button");
+		var stopButton = document.getElementById("stop-button");
+		var duration = document.getElementById("win-duration");
+		
+
+		(function initWindow(){
+			//add first plot
+			startButton.onclick = start_realtime;
+			stopButton.onclick = stop_realtime;
+			document.getElementById("update-duration").onclick = update_duration;
+			//stopButton.disabled = true;
+		})();
+		
+
+		function start_realtime() {
+			hideAlert();
+			if(active){
+				showAlert("Real-time analysis is already running");
+				return;
+			}
+			//PARSE validity of params
+			//if(parseInt(captureIntervalInput.value)<1 || parseInt(captureIntervalInput.value) >10){
+			//	showAlert("Capture Interval must be an integer in range (1,10)");
+			//	return;
+			//}
+			startButton.classList.add("spinning");
+			startButton.disabled = true;
+			//reqTime = parseInt(captureIntervalInput.value);
+			
+			let url = '<%=luci.dispatcher.build_url("admin", "forensics","forensics", "csi_start_realtime")%>'
+			
+			makeCall("POST",url,function(req){
+				if (req.readyState == 4) {
+						startButton.classList.remove("spinning");
+						let response = req.responseText;
+						if (req.status == 200) {
+							console.log("OK")
+							active = true;
+							stopButton.disabled = false;
+						} 
+						else {
+							showAlert(response);
+							active = false;
+							startButton.disabled = false;
+						}
+						
+				}
+		
+			},document.getElementById("csi-rt-control"),false);
+		
+		}
+		
+		function stop_realtime() {
+			hideAlert();
+			if(!active){
+				showAlert("Real-time analysis not running");
+				return;
+			}
+			//PARSE validity of params
+			
+			//if(parseInt(captureIntervalInput.value)<1 || parseInt(captureIntervalInput.value) >10){
+			//	showAlert("Capture Interval must be an integer in range (1,10)");
+			//	return;
+			//}
+			stopButton.classList.add("spinning");
+			stopButton.disabled = true;
+			let url = '<%=luci.dispatcher.build_url("admin", "forensics","forensics", "csi_stop_realtime")%>'
+			
+			makeCall("POST",url,function(req){
+				if (req.readyState == 4) {
+						stopButton.classList.remove("spinning");
+						let response = req.responseText;
+						if (req.status == 200) {
+							console.log("OK")
+							active = false;
+							startButton.disabled = false;
+						} 
+						else {
+							showAlert(response);
+							active = true;
+							stopButton.disabled = false;
+						}
+						
+				}
+		
+			},document.getElementById("csi-rt-control"),false);
+		
+		}
+		
+		function showAlert(text){
+			var alert = document.getElementById("realtime-error");
+			alert.style.display = "block";
+			if(text){
+				alert.innerHTML = text;
+			}
+		}
+		function hideAlert(){
+			document.getElementById("realtime-error").style.display = "none";
+		}
+		
+		function makeCall(method, url, cback, formElement = null, reset = true,timeout = 4) {
+			var req = new XMLHttpRequest();
+			req.timeout = timeout*1000;
+			req.onreadystatechange = function() {
+				cback(req);
+			};
+			req.open(method, url);
+			if (formElement == null) {
+				req.send();
+			} else {
+				req.send(new FormData(formElement));
+			}
+			if (formElement !== null && reset === true) {
+				formElement.reset();
+			}
+		}
+		
+		function update_duration(){
+			document.querySelector("#update-duration i").classList.remove("clickable");
+			document.querySelector("#update-duration i").classList.add("spinning");
+
+			let url = '<%=luci.dispatcher.build_url("admin", "forensics", "forensics","csi_update_realtime_duration")%>'
+			makeCall("POST",url,function(req){
+				if (req.readyState == 4) {
+						stopButton.classList.remove("spinning");
+						let response = req.responseText;
+						if (req.status == 200) {
+							console.log("OK "+response)
+						} 
+						document.querySelector("#update-duration i").classList.remove("spinning");
+						document.querySelector("#update-duration i").classList.add("clickable");
+				}
+		
+			},document.getElementById("csi-rt-control"),false);
+
+		}
+		
+	}//closes the window.onload
+})(); //closes the self-calling function (mother of the script)
+</script>
+
+
+<style>
+
+.update-btn i{
+	font-size:18px;
+	color:#4a4;
+	position:relative;
+	right:9px;
+	top:0.5px;
+}
+i.spinning{
+	position:relative;
+	right:16px;
+}
+
+.clickable{
+	cursor: pointer;
+}
+
+</style>
+<%+footer%>
