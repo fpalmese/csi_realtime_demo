@@ -1,5 +1,6 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.3.0/font/bootstrap-icons.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
 <%+header%>
 
 <% filesDirectory="/mnt/sda1/testDirectory"
@@ -19,54 +20,93 @@ end
 %>
 
 <h2><%:CSI Real-Time Monitor%></h2>
-<div>Here you can Analyse CSI in Real-Time</div>
-
+</br>
 <div id="main-view">
-	<div>
-		<form class="control-group" id="csi-rt-control" >
-				<h5>Window duration (s)</h5>
-				<input name="win-duration" type="number" id="win-duration" style="width:60px" min="0.05" max="10" value="0.5" step="0.05"></input>
-				<div style="display:inline-block;position:relative;left:1%;max-width:15px;">
-					<div id="update-duration" class="update-btn" style="border:1px solid #4a4; padding:2px 11px;border-radius:14px">
-					<i class="bi bi-arrow-repeat clickable"></i>
-					</div>
-				</div>
-				</br></br>
-
-				<h5>Processing Type</h5>
-				<div id="processing-type">
-					Aggregate Value <input name="processing-type" type="radio" id="processing-type-1" value="1" checked="checked"></input></br>
-					CSI Image Plot <input name="processing-type" type="radio" id="processing-type-2" value="2"></input>
-				</div>
-				</br>
-
-				<div id="capture-mode">
-					<h5>Capture Mode</h5>
-					Live <input name="capture-mode" type="radio" id="capture-mode-1" value="LIVE" checked="checked"></input></br>
-					PCAP <input name="capture-mode" type="radio" id="capture-mode-2" value="PCAP"></input>
-				</div>
-				</br>
-
-				<h5>Devices:</h5>
-				<div id="processing-type">
-					All (3) <input name="device-select" type="radio" id="device-select0" value="0" checked="checked"></input></br>
-					Camera  <input name="device-select" type="radio" id="device-select1" value="1"></input></br>
-					ESP8266  <input name="device-select" type="radio" id="device-select2" value="2"></input></br>
-					ESP32  <input name="device-select" type="radio" id="device-select2" value="3"></input>
-				</div>
-		</form>
-		</br></br>
-		<div id="realtime-error" class="cbi-section-error" data-index="10" style="display:none">
-		Error in the request, try again...
-		</div>
-		</br>
+	<div id="control-buttons" style="padding-bottom:10">
+		<h5>Controls</h5>
 		<button id="start-button" class="btn cbi-button cbi-button-save">Start</button>
 		<button id="stop-button" class="btn cbi-button cbi-button-reset">Stop</button>
-		</br></br>
+		<div id="realtime-error" class="cbi-section-error" data-index="10" style="display:none;margin-top:10;">
+			Error in the request, try again...
+		</div>
 	</div>
+
+	<div id="plotter-div"></div>
+		<h4 class="center-text">Real-time plot</h4>
+			<div id="canvas-div" style="border:2px solid black;padding:20;border-radius: 10px;">
+				<canvas id="myChart"></canvas>
+			</div>
+	</div>
+
+	<div class="settings-div">
+		<form class="control-group" id="csi-rt-control" >
+
+				<div class="settings-subdiv" id="capture-mode-settings">
+					<h5>Capture Mode</h5>
+					<div class="horiz-pad inline">
+						Capture Mode: <select id="capture-mode-select" name="capture-mode" style="width:80px">
+							<option value="LIVE">Live</option>
+							<option value="PCAP">PCAP</option>
+						</select>
+					</div>
+					<div id="settings-live-div" class="inline horiz-pad">
+						<div class="inline horiz-pad">
+							Wi-Fi Band: <select id="select-band" name="band" style="width:100px">
+								<option value="2.4">2.4GHz</option>
+								<option value="5">5GHz</option>
+							</select>
+						</div>
+						<div class="inline horiz-pad">
+							Bandwidth: <select id="select-bandwidth" name="bandwidth" style="width:100px">
+								<option value="20">20MHz</option>
+								<option value="40">40MHz</option>
+							</select>
+						</div>
+						<div class="inline horiz-pad">
+							Channel <input name="channel" type="number" id="channel-number" style="width:60px" min="1" max="200" value="1" step="1"></input>
+						</div>
+					</div>
+					<div id="settings-pcap-div" class="inline horiz-pad" style="display:none">
+						PCAP global path: <input name="pcap-filename" type="text" id="input-pcap" style="width:200px;"></input>
+					</div>
+				</div>
+
+				<div class="settings-subdiv">
+					<h5>Window duration (s)</h5>
+					<input name="win-duration" type="number" id="win-duration-input" style="width:60px" min="0.05" max="10" value="0.5" step="0.05"></input>
+					<div style="display:inline-block;position:relative;left:1%;max-width:15px;">
+						<div id="update-duration" class="update-btn" style="border:1px solid #4a4; padding:2px 11px;border-radius:14px">
+						<i class="bi bi-arrow-repeat clickable"></i>
+						</div>
+					</div>
+				</div>
+
+				<div class="settings-subdiv">
+					<h5>Processing Type</h5>
+					<div id="processing-type">
+						Aggregate Value <input name="processing-type" type="radio" id="processing-type-1" value="1" checked="checked"></input></br>
+						CSI Image Plot <input name="processing-type" type="radio" id="processing-type-2" value="2"></input>
+					</div>
+				</div>
+
+				<div class="settings-subdiv">
+					<h5>Devices:</h5>
+					<div id="processing-type">
+						All (3) <input name="device-select" type="radio" id="device-select0" value="0"></input></br>
+						Camera  <input name="device-select" type="radio" id="device-select1" value="1" checked="checked"></input></br>
+						ESP8266  <input name="device-select" type="radio" id="device-select2" value="2"></input></br>
+						ESP32  <input name="device-select" type="radio" id="device-select2" value="3"></input>
+					</div>
+				</div>
+		</form>
+	</div>
+	</br>
+	
 </div>
+	
 
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script type="text/javascript">
 
@@ -77,20 +117,36 @@ end
 	};
 	
 	window.onload = function(){
+		const ws_address = "ws://192.168.2.224:8766";
 		var active = false;
-		var startButton = document.getElementById("start-button");
-		var stopButton = document.getElementById("stop-button");
-		var duration = document.getElementById("win-duration");
-		
+		var working_window = 0.5;
+		const chart_radius_size = 2;
+		const startButton = document.getElementById("start-button");
+		const stopButton = document.getElementById("stop-button");
+		const canvas = document.getElementById('myChart');
+		var realtime_chart = null;
+		var ws_client = null;
+		var n_samples_chart = 100;
+		var x_data_plot = null;
+		var y_data_plot = null;
+		var start_x = 0;
+		var last_x = 0;
+		var last_y = 0;
 
+
+
+		//initialize everything
 		(function initWindow(){
 			//add first plot
 			startButton.onclick = start_realtime;
 			stopButton.onclick = stop_realtime;
 			document.getElementById("update-duration").onclick = update_duration;
+			document.getElementById("select-band").onchange = update_bandwidth_select;
+			document.getElementById("capture-mode-select").onchange = update_capture_mode;
 			//stopButton.disabled = true;
 		})();
 		
+
 
 		function start_realtime() {
 			hideAlert();
@@ -98,6 +154,7 @@ end
 				showAlert("Real-time analysis is already running");
 				return;
 			}
+			let window_value = document.getElementById("win-duration-input").value;
 			//PARSE validity of params
 			//if(parseInt(captureIntervalInput.value)<1 || parseInt(captureIntervalInput.value) >10){
 			//	showAlert("Capture Interval must be an integer in range (1,10)");
@@ -105,6 +162,7 @@ end
 			//}
 			startButton.classList.add("spinning");
 			startButton.disabled = true;
+			open_websocket_client();
 			//reqTime = parseInt(captureIntervalInput.value);
 			
 			let url = '<%=luci.dispatcher.build_url("admin", "forensics","forensics", "csi_start_realtime")%>'
@@ -117,11 +175,13 @@ end
 							console.log("OK")
 							active = true;
 							stopButton.disabled = false;
+							working_window_duration = window_value;
 						} 
 						else {
 							showAlert(response);
 							active = false;
 							startButton.disabled = false;
+							close_websocket_client();
 						}
 						
 				}
@@ -164,7 +224,7 @@ end
 				}
 		
 			},document.getElementById("csi-rt-control"),false);
-		
+			close_websocket_client();
 		}
 		
 		function showAlert(text){
@@ -198,7 +258,7 @@ end
 		function update_duration(){
 			document.querySelector("#update-duration i").classList.remove("clickable");
 			document.querySelector("#update-duration i").classList.add("spinning");
-
+			let window_value = document.getElementById("win-duration-input").value;
 			let url = '<%=luci.dispatcher.build_url("admin", "forensics", "forensics","csi_update_realtime_duration")%>'
 			makeCall("POST",url,function(req){
 				if (req.readyState == 4) {
@@ -206,6 +266,7 @@ end
 						let response = req.responseText;
 						if (req.status == 200) {
 							console.log("OK "+response)
+							working_window_duration = window_value;
 						} 
 						document.querySelector("#update-duration i").classList.remove("spinning");
 						document.querySelector("#update-duration i").classList.add("clickable");
@@ -215,6 +276,150 @@ end
 
 		}
 		
+		function update_bandwidth_select(e){
+			const bandwidths = {"2.4":[20,40],"5":[20,40,80]}
+			var select_bw = document.getElementById("select-bandwidth");
+			select_bw.innerHTML = ""; //reset the select
+			var bws = bandwidths[this.value];
+			bws.forEach(element => {
+				let opt = document.createElement("option");
+				opt.setAttribute("value",element.toString());
+				opt.innerHTML = element.toString()+"MHz";
+				select_bw.appendChild(opt);
+			});
+			select_bw.value = 20;
+		}
+		
+		function update_capture_mode(e){
+			if(this.value == "LIVE"){
+				document.getElementById("settings-live-div").style.display="inline";
+				document.getElementById("settings-pcap-div").style.display="none";
+			}
+			else if(this.value=="PCAP"){
+				document.getElementById("settings-live-div").style.display="none";
+				document.getElementById("settings-pcap-div").style.display="inline";
+			}
+		}
+
+		// function to update the chart 
+		
+
+		(function init_canvas(chart){
+			x_data_plot = new Array(20).fill(0);
+			y_data_plot = new Array(20).fill(0);
+			canvas.height = 100;
+			const data = {
+			labels: [],
+			datasets: [{
+				label: 'Real-time value',
+				backgroundColor: 'rgb(31, 119, 180)',
+				borderColor: 'rgb(31, 119, 180)',
+				data: [],
+				pointRadius: chart_radius_size,
+			}]
+			};
+
+			const chart_options = {
+				animation: {
+                    duration: 0  // Disables animations
+                },
+				scales: {
+     					 x: {
+							type: 'linear',
+        					title: { display: true, text: 'Time(s)' }
+      						},
+      					y: {
+        					title: { display: true, text: 'Value'}
+      					}
+    		}};
+
+			const config = { 
+				type: 'line',
+				data: data,
+				options:chart_options
+			};
+			realtime_chart = new Chart(canvas,config);
+			
+		})();
+
+		function process_incoming_data(event){
+			console.log("New data arrived: ",event.data)
+			data = event.data.split(",")
+			data_time = parseFloat(data[1])
+			data_value = parseFloat(data[2])
+			add_point(data_time,data_value);
+		}
+
+		function add_point(x, y) {
+			if(start_x == 0){
+				start_x = x;
+				last_y = y;
+			}
+			if(x < last_x){
+				return;
+			}
+			x_data_plot.push(x-start_x);
+			y_data_plot.push(y-last_y);
+			x_data_plot = x_data_plot.slice(-n_samples_chart);
+			y_data_plot = y_data_plot.slice(-n_samples_chart);
+			//y_data_plot = highPassFilter(y_data_plot);
+			realtime_chart.data.labels = x_data_plot;
+			realtime_chart.data.datasets.forEach((dataset) => {
+					dataset.data = y_data_plot;
+				});
+			
+			last_x = x;
+			last_y = y;
+			realtime_chart.update();
+			/*
+			realtime_chart.data.labels.push(x);
+				realtime_chart.data.datasets.forEach((dataset) => {
+					dataset.data.push(y);
+				});
+				realtime_chart.update();
+			*/
+		}
+
+		function open_websocket_client(){
+			ws_client = new WebSocket(ws_address);
+			ws_client.onmessage = process_incoming_data;
+			ws_client.onopen = function(event) { console.log("SUCCESSFULY CONNECTED WS")};
+			ws_client.onclose = handle_close_websocket;
+			ws_client.onerror = handle_error_websocket;
+		}
+		function close_websocket_client(){
+			if(ws_client){
+				ws_client.close()
+			}
+			ws_client = null;
+		}
+
+		function handle_close_websocket(event){
+			console.log("SUCCESSFULY CLOSED WS")
+			active = false;
+		}
+		function handle_error_websocket(event){
+			console.log("ERROR ON WS", event)
+
+		}
+		
+		function highPassFilter(inputArray) {
+			let cutoffFrequency = 1
+			let samplingRate = 1 / working_window;
+			const RC = 1 / (2 * Math.PI * cutoffFrequency); // Time constant
+			const dt = 1 / samplingRate;                  // Sampling interval
+			const alpha = RC / (RC + dt);                 // Filter coefficient
+
+			const outputArray = new Array(inputArray.length); // Pre-allocate output array
+			outputArray[0] = inputArray[0];                   // Initialize with the first input value
+
+			for (let i = 1; i < inputArray.length; i++) {
+				// Apply the high-pass filter formula
+				outputArray[i] = alpha * (outputArray[i - 1] + inputArray[i] - inputArray[i - 1]);
+			}
+			return outputArray;
+		}
+	
 	}//closes the window.onload
 })(); //closes the self-calling function (mother of the script)
 </script>
@@ -238,5 +443,17 @@ i.spinning{
 	cursor: pointer;
 }
 
+.horiz-pad{
+	padding: 0 10 0 0;
+}
+.inline{
+	display:inline;
+}
+.settings-subdiv{
+	padding-top:10px;
+}
+.center-text{
+	text-align: center;
+}
 </style>
 <%+footer%>

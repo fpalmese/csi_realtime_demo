@@ -31,8 +31,11 @@ function handle_start_csi_realtime()
 	local cap_mode = luci.http.formvalue("capture-mode")
 	local proc_type = luci.http.formvalue("processing-type")
 	local devices = luci.http.formvalue("device-select")
+	local band = luci.http.formvalue("band")
+	local bandwidth = luci.http.formvalue("bandwidth")
+	local channel = luci.http.formvalue("channel")
 	
-	local json_res = '{"duration":'..win_duration..', "cap_mode":"'..cap_mode..'", "proc_type":'..proc_type..',"devices":'..devices..'}'
+	local json_res = '{"duration":'..win_duration..', "cap_mode":"'..cap_mode..'", "proc_type":'..proc_type..',"devices":'..devices..', "channel": '..channel..', "band":'..band..', "bandwidth":'..bandwidth..'}'
 	
 	luci.sys.call("mosquitto_pub -h "..broker_address.." -t "..start_topic.." -m '"..json_res.."'")
 	

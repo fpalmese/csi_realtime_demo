@@ -7,6 +7,10 @@ from csi_parser import CsiParser
 import matplotlib.pyplot as plt
 import pickle
 import json
+from websockets.sync.server import serve
+import asyncio
+from threading import Thread
+from socket import *
 
 #CAPTURE DEFAULTS, SHOULD BE ADAPTED FROM THE GUI
 
@@ -16,6 +20,8 @@ import json
 #devices = ["2C:3A:E8:1C:BC:71"] #ESP32
 all_devs = ["a0:9f:10:7f:b3:68","2c:3a:e8:1c:bc:71","40:4c:ca:4c:17:dc"] #both
 channel = 1
+band = 2.4
+bandwidth = 20
 
 # COLLECTION PARAMETERS #
 started = False
@@ -29,19 +35,50 @@ cp = CsiParser()
 num_components = 0
 sq_bits = 0
 
-
-
 # MQTT PARAMETERS #
 broker_address = "localhost"  # Broker address
 port = 1883  # Broker port
 mqtt_client = mqtt.Client()  # create new instance
 
+
+#WEBSOCKET SERVER
+ws_port = 8766
+current_ws = None
+server_port = 12345
+
+"""
+def ws_server_func():
+	def ws_handler(websocket):
+		global current_ws
+		current_ws = websocket
+
+		try:
+			print("Client Connected!")
+			
+			while True:
+				pass
+		except Exception as e:
+			print(e)
+		finally:
+			current_ws = None
+
+	with serve(ws_handler, "", ws_port) as server:
+		server.serve_forever()
+"""
+def ws_server_func():
+	server_socket = socket(AF_INET,SOCK_DGRAM)
+	server_socket.bind(("",server_port))
+	connected = False
+	whi
+	
 def realtime_callback(value):
-	result = mqtt_client.publish("csi_realtime_value",value)
+	#result = mqtt_client.publish("csi_realtime_value",value)
+	if current_ws is not None:
+		current_ws.send(value)
 
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code " + str(rc))
-    client.subscribe([("start_csi_realtime", 1), ("stop_csi_realtime", 1), ("set_csi_duration", 1),("set_verbose", 1),("set_processing_type",1)])
+    client.subscribe([("start_csi_realtime", 1), ("stop_csi_realtime", 1), ("set_csi_duration", 1),("set_verbose", 1),("set_processing_type",1),("get_current_status",1)])
 
 
 def on_message(client, userdata, message):
@@ -61,10 +98,15 @@ def on_message(client, userdata, message):
 
 		try:
 			input_vals = json.loads(message.payload.decode())
+
 			win_duration = float(input_vals.get("duration",0.5))
 			capture_mode = input_vals.get("cap_mode","LIVE")
 			proc_type = int(input_vals.get("proc_type",1))
 			device_select = int(input_vals.get("devices",0))
+			channel = int(input_vals.get("channel",1))
+			band = float(input_vals.get("band",2.4))
+			bandwidth = float(input_vals.get("bandwidth",20))
+			
 		except Exception as e:
 			print(e)
 
@@ -99,7 +141,15 @@ def on_message(client, userdata, message):
 		payload = int(message.payload.decode())
 		cp.set_processing_type(payload)
 
+	if (message.topic == 'get_current_status'):
+		msg = f'\{"status":{status},"capture_mode":{cp.capture_mode},"devices":{devices},"proc_type":{cp.proc_type}\}'
+		mqtt_client.publish("running_status",msg)
 
+#start websocket
+#ws_thread = Thread(target=ws_server_func)
+#ws_thread.start()
+
+#set mqtt client
 mqtt_client.on_connect = on_connect  # attach function to callback
 mqtt_client.on_message = on_message  # attach function to callback
 mqtt_client.connect(broker_address, port=port)  # connect to broker

@@ -10,9 +10,6 @@ defalut_subcarriers = list(range(1,7))+list(range(8,21))+list(range(22,28))+list
 ordered_subcarriers = list(range(32,64))+list(range(32))
 ordered_default_subcarriers = list(range(36,43))+list(range(44,57))+list(range(58,64))+list(range(1,7))+list(range(8,21))+list(range(22,28))
 
-processing = 1
-processing = 2
-
 
 #convert the byte list to a string containing the mac
 def bytes_to_mac(byteList):
@@ -124,7 +121,7 @@ class CsiParser:
         self.start_time = 0
         self.subcarriers = defalut_subcarriers
         self.devices = []
-        self.processing_type = processing
+        self.processing_type = 1
 
     def start(self,callback):
         self.callback=callback
