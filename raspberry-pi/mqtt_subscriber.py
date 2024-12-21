@@ -19,15 +19,12 @@ from socket import *
 #devices = ["2C:3A:E8:1C:BC:71"] #ESP8266
 #devices = ["2C:3A:E8:1C:BC:71"] #ESP32
 all_devs = ["a0:9f:10:7f:b3:68","2c:3a:e8:1c:bc:71","40:4c:ca:4c:17:dc"] #both
-channel = 1
-band = 2.4
-bandwidth = 20
+device_select = 1
 
 # COLLECTION PARAMETERS #
 started = False
-rotation_period = 10
-num_files = 2
-eval_period = 0.5
+
+#MANAGER OBJECTS
 nm = NexmonManager()
 cp = CsiParser()
 
@@ -40,49 +37,60 @@ broker_address = "localhost"  # Broker address
 port = 1883  # Broker port
 mqtt_client = mqtt.Client()  # create new instance
 
-
-#WEBSOCKET SERVER
-ws_port = 8766
-current_ws = None
+#UDP SERVER INFO (to send the results)
+connected_client = None
 server_port = 12345
+sending_socket = socket(AF_INET,SOCK_DGRAM)
 
-"""
-def ws_server_func():
-	def ws_handler(websocket):
-		global current_ws
-		current_ws = websocket
 
-		try:
-			print("Client Connected!")
-			
-			while True:
-				pass
-		except Exception as e:
-			print(e)
-		finally:
-			current_ws = None
-
-	with serve(ws_handler, "", ws_port) as server:
-		server.serve_forever()
-"""
-def ws_server_func():
+def udp_server_func():
+	global connected_client
 	server_socket = socket(AF_INET,SOCK_DGRAM)
 	server_socket.bind(("",server_port))
 	connected = False
-	whi
-	
+	while(True):
+		msg,address = server_socket.recvfrom(2048)
+		if msg.decode("UTF-8") == "CONNECT":
+			connected_client = address
+			connected = True
+		server_socket.sendto("CONNACK".encode("UTF-8"),address)
+
+
 def realtime_callback(value):
 	#result = mqtt_client.publish("csi_realtime_value",value)
-	if current_ws is not None:
-		current_ws.send(value)
+	#if current_ws is not None:
+	#	current_ws.send(value)
+	if connected_client is not None:
+		sending_socket.sendto(value.encode("UTF-8"),connected_client)
 
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code " + str(rc))
-    client.subscribe([("start_csi_realtime", 1), ("stop_csi_realtime", 1), ("set_csi_duration", 1),("set_verbose", 1),("set_processing_type",1),("get_current_status",1)])
+    client.subscribe([("#",1)])
+
+def configure_params(config_params):
+	global band,bandwidth,channel,device_select
+	
+	#parse the input params from the payload
+	capture_mode = config_params.get("cap_mode","LIVE")
+	band = float(config_params.get("band",2.4))
+	bandwidth = int(config_params.get("bandwidth",20))
+	channel = int(config_params.get("channel",1))
+	input_pcap = config_params.get("input_pcap",None)
+	win_duration = float(config_params.get("duration",0.5))
+	proc_type = int(config_params.get("proc_type",1))
+	device_select = int(config_params.get("devices",1))
+	#to be fixed based on input
+	devices = [all_devs[device_select-1]] if device_select > 0 else all_devs
+
+	#configure and start nexmon
+	nm.configure(channel = channel, band = band, bandwidth = bandwidth, devices = devices)
+
+	#configure and start csi collection
+	cp.configure(devices = devices,win_duration = win_duration,proc_type = proc_type, capture_mode = capture_mode, input_pcap = input_pcap)
 
 
 def on_message(client, userdata, message):
-	global started 
+	global started
 	print("Message received: " + message.topic + " : " + str(message.payload.decode()))
 	if (message.topic == 'start_csi_realtime' and started==False):
 		# PREPARE THE CONFIGURATION (with standard values)
@@ -97,34 +105,29 @@ def on_message(client, userdata, message):
         		time.sleep(10)
 
 		try:
-			input_vals = json.loads(message.payload.decode())
-
-			win_duration = float(input_vals.get("duration",0.5))
-			capture_mode = input_vals.get("cap_mode","LIVE")
-			proc_type = int(input_vals.get("proc_type",1))
-			device_select = int(input_vals.get("devices",0))
-			channel = int(input_vals.get("channel",1))
-			band = float(input_vals.get("band",2.4))
-			bandwidth = float(input_vals.get("bandwidth",20))
-			
+			input_params = json.loads(message.payload.decode())
 		except Exception as e:
-			print(e)
+			print("Empty Start")
+			input_params = {}
 
-		devices = [all_devs[device_select-1]] if device_select > 0 else all_devs
-		cp.set_devices(devices)
-		cp.set_duration(win_duration)
-		cp.set_processing_type(proc_type)
-		cp.set_capture_mode(capture_mode)
+		configure_params(input_params)
 
-		started = True
-		nm.configure(channel, devices = devices)
-		#nm.capture_realtime(file_name="realtime_test",period=rotation_period,file_count=num_files)
+		nm.start()
 		cp.start(callback=realtime_callback)
+		started = True
+	
+	if (message.topic == 'save_csi_realtime' and started==False):
+		print("updating collection params")
+		try:	
+			input_params = json.loads(message.payload.decode())
+		except Exception as e:
+			print("Empty Save, ",e)
+			input_params = {}
 
-		
+		configure_params(input_params)
+
 	if (message.topic == 'stop_csi_realtime' and started==True):
 		print("should stop")
-		#nm.stop_realtime()
 		cp.stop()
 		started = False
 
@@ -142,16 +145,23 @@ def on_message(client, userdata, message):
 		cp.set_processing_type(payload)
 
 	if (message.topic == 'get_current_status'):
-		msg = f'\{"status":{status},"capture_mode":{cp.capture_mode},"devices":{devices},"proc_type":{cp.proc_type}\}'
-		mqtt_client.publish("running_status",msg)
+		res = cp.get_params()
+		res.update(nm.get_params())
+		res["status"] = started
+		res["device_select"] = device_select
+		msg = json.dumps(res)
+		#msg = f'\{"status":{started},"devices":{cp_params.devices},"band":{nm_params.band},"bandwidth":{nm_params.bandwidth},"channel":{nm_params.channel},"capture_mode":{cp_params.capture_mode},"proc_type":{cp_params.proc_type}\}'
+		time.sleep(0.1)
+		mqtt_client.publish("running_status",msg,retain=True)
+		time.sleep(0.05)
+		mqtt_client.publish("running_status","",retain=True)
 
-#start websocket
-#ws_thread = Thread(target=ws_server_func)
-#ws_thread.start()
+#start udp server to send back the response (client will connect)
+udp_thread = Thread(target=udp_server_func)
+udp_thread.start()
 
 #set mqtt client
 mqtt_client.on_connect = on_connect  # attach function to callback
 mqtt_client.on_message = on_message  # attach function to callback
 mqtt_client.connect(broker_address, port=port)  # connect to broker
-
 mqtt_client.loop_forever()
