@@ -21,29 +21,29 @@ end
 
 <h2><%:CSI Real-Time Monitor%></h2>
 </br>
-<div id="main-view">
-	<div id="control-buttons" style="padding-bottom:10">
-		<h5>Controls</h5>
-		<button id="start-button" class="btn cbi-button cbi-button-save">Start</button>
-		<button id="stop-button" class="btn cbi-button cbi-button-reset">Stop</button>
-		<div id="realtime-error" class="cbi-section-error" data-index="10" style="display:none;margin-top:10;">
-			Error in the request, try again...
+<div style="padding-bottom:10"> 
+	<div class="inline bold" style="font-size:17;">Status: <span id="status-div" style="width:100"></span></div>
+	<div style="display:inline-block;position:relative;left:1%;max-width:20px;">
+		<div id="refresh-status-btn" class="update-btn" style="border:1px solid #4a4; padding:2px 11px;border-radius:14px">
+			<i class="bi bi-arrow-repeat clickable"></i>
 		</div>
 	</div>
-
-	<div id="plotter-div"></div>
-		<h4 class="center-text">Real-time plot</h4>
-			<div id="canvas-div" style="border:2px solid black;padding:20;border-radius: 10px;">
-				<canvas id="myChart"></canvas>
-			</div>
-	</div>
-
+</div>
+<div id="main-view">
 	<div class="settings-div">
 		<form class="control-group" id="csi-rt-control" >
-
-				<div class="settings-subdiv" id="capture-mode-settings">
+			<div max-width="10000">
+				<div id="control-buttons" style="padding-bottom:10" class="inline">
+					<h5>Controls</h5>
+					<button id="start-button" class="btn cbi-button cbi-button-save">Start</button>
+					<button id="stop-button" class="btn cbi-button cbi-button-reset">Stop</button>
+					<div id="realtime-error" class="cbi-section-error hidden" data-index="10" style="margin-top:10;">
+						Error in the request, try again...
+					</div>
+				</div>
+				<div class="inline" id="capture-mode-settings">
 					<h5>Capture Mode</h5>
-					<div class="horiz-pad inline">
+					<div class="inline">
 						Capture Mode: <select id="capture-mode-select" name="capture-mode" style="width:80px">
 							<option value="LIVE">Live</option>
 							<option value="PCAP">PCAP</option>
@@ -63,50 +63,93 @@ end
 							</select>
 						</div>
 						<div class="inline horiz-pad">
-							Channel <input name="channel" type="number" id="channel-number" style="width:60px" min="1" max="200" value="1" step="1"></input>
+							Channel: <input name="channel" type="number" id="input-channel" style="width:60px" min="1" max="200" value="1" step="1"></input>
 						</div>
 					</div>
-					<div id="settings-pcap-div" class="inline horiz-pad" style="display:none">
-						PCAP global path: <input name="pcap-filename" type="text" id="input-pcap" style="width:200px;"></input>
+					<div id="settings-pcap-div" class="hidden horiz-pad">
+						PCAP global path: <input name="input-pcap" type="text" id="input-pcap" style="width:200px;"></input>
+					</div>
+				</div>
+			</div>
+			<div class="settings-subdiv" id="capture-mode-settings">
+				<h5>Compression Settings</h5>
+				<div>
+					Scalar Quantization: <input type="checkbox" id="sq-checkbox" name="sq-checkbox">
+					<div class="horiz-pad hidden" id="sq-bits-div">
+						Bits: <select id="sq-bits-select" name="sq-bits" style="width:50px">
+							<option value=1>1</option>
+							<option value=2>2</option>
+							<option value=4>4</option>
+							<option value=8>8</option>
+							<option value=16>16</option>
+						</select>
+					</div>
+				</div>
+				</br>
+				<div>
+					Vector Quantization: <input type="checkbox" id="vq-checkbox" name="vq-checkbox">
+					<div id="vq-bits-div" class="horiz-pad hidden">
+						Bits: <select id="vq-bits-select" name="vq-bits" style="width:50px">
+							<option value=1>1</option>
+							<option value=2>2</option>
+							<option value=4>4</option>
+							<option value=8>8</option>
+							<option value=16>16</option>
+						</select>
 					</div>
 				</div>
 
-				<div class="settings-subdiv">
-					<h5>Window duration (s)</h5>
-					<input name="win-duration" type="number" id="win-duration-input" style="width:60px" min="0.05" max="10" value="0.5" step="0.05"></input>
-					<div style="display:inline-block;position:relative;left:1%;max-width:15px;">
-						<div id="update-duration" class="update-btn" style="border:1px solid #4a4; padding:2px 11px;border-radius:14px">
+				</br>
+				<div>
+					Principal Component Analysis (PCA): <input type="checkbox" id="pca-checkbox" name="pca-checkbox">
+					<div class="horiz-pad hidden" id="pca-components-div">
+						PCA Components: <input name="pca-components" type="number" id="pca-components-input" style="width:60px" min="1" max="20" value="1" step="1"></input>
+					</select>
+					</div>
+				</div>
+				
+			</div>
+
+			<div class="settings-subdiv">
+				<h5>Processing Settings</h5>
+				Aggregation Window: <input name="win-duration" type="number" id="win-duration-input" style="width:60px" min="0.05" max="10" value="0.5" step="0.05"></input>
+				<div style="display:inline-block;position:relative;left:1%;max-width:15px;">
+					<div id="update-duration-btn" class="update-btn" style="border:1px solid #4a4; padding:2px 11px;border-radius:14px">
 						<i class="bi bi-arrow-repeat clickable"></i>
-						</div>
 					</div>
 				</div>
+			</div>
+			</br>
+			<div id="processing-type">
+				Processing Type: <select name="proc-type" id="proc-type-select" style="width:150px">
+					<option value="1">Aggregate Value</option>
+					<option value="2">CSI Image Plot</option>
+				</select>
+			</div>
 
-				<div class="settings-subdiv">
-					<h5>Processing Type</h5>
-					<div id="processing-type">
-						Aggregate Value <input name="processing-type" type="radio" id="processing-type-1" value="1" checked="checked"></input></br>
-						CSI Image Plot <input name="processing-type" type="radio" id="processing-type-2" value="2"></input>
-					</div>
-				</div>
 
-				<div class="settings-subdiv">
-					<h5>Devices:</h5>
-					<div id="processing-type">
-						All (3) <input name="device-select" type="radio" id="device-select0" value="0"></input></br>
-						Camera  <input name="device-select" type="radio" id="device-select1" value="1" checked="checked"></input></br>
-						ESP8266  <input name="device-select" type="radio" id="device-select2" value="2"></input></br>
-						ESP32  <input name="device-select" type="radio" id="device-select2" value="3"></input>
-					</div>
+			<div class="settings-subdiv">
+				<h5>Devices:</h5>
+				<div id="devices-div">
+					All (3) <input name="device-select" type="radio" id="device-select0" value="0"></input></br>
+					Camera  <input name="device-select" type="radio" id="device-select1" value="1" checked="checked"></input></br>
+					ESP8266  <input name="device-select" type="radio" id="device-select2" value="2"></input></br>
+					ESP32  <input name="device-select" type="radio" id="device-select2" value="3"></input>
 				</div>
+			</div>
+			</br>
+			<div id="control-buttons" style="padding-bottom:10">
+				<button id="save-button" class="btn cbi-button cbi-button-save">Save</button>
+				<div id="save-error" class="cbi-section-error hidden" data-index="10" style="margin-top:10;">
+					Error in the request, try again...
+				</div>
+			</div>
 		</form>
 	</div>
 	</br>
 	
 </div>
 	
-
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script type="text/javascript">
 
@@ -117,71 +160,56 @@ end
 	};
 	
 	window.onload = function(){
-		const ws_address = "ws://192.168.2.224:8766";
 		var active = false;
 		var working_window = 0.5;
-		const chart_radius_size = 2;
-		const startButton = document.getElementById("start-button");
-		const stopButton = document.getElementById("stop-button");
-		const canvas = document.getElementById('myChart');
-		var realtime_chart = null;
-		var ws_client = null;
-		var n_samples_chart = 100;
-		var x_data_plot = null;
-		var y_data_plot = null;
-		var start_x = 0;
-		var last_x = 0;
-		var last_y = 0;
-
-
 
 		//initialize everything
 		(function initWindow(){
-			//add first plot
-			startButton.onclick = start_realtime;
-			stopButton.onclick = stop_realtime;
-			document.getElementById("update-duration").onclick = update_duration;
-			document.getElementById("select-band").onchange = update_bandwidth_select;
-			document.getElementById("capture-mode-select").onchange = update_capture_mode;
-			//stopButton.disabled = true;
+			disableGUI();
+			refreshCurrentStatus();
+			document.getElementById("start-button").onclick = startRealtime;
+			document.getElementById("stop-button").onclick = stopRealtime;
+			document.getElementById("save-button").onclick = saveConfig;
+			document.getElementById("update-duration-btn").onclick = sendUpdateDuration;
+			document.getElementById("refresh-status-btn").onclick = refreshCurrentStatus;
+			document.getElementById("select-band").onchange = updateBandwidthSelect;
+			document.getElementById("capture-mode-select").onchange = updateCaptureMode;
+			
+			document.getElementById("sq-checkbox").addEventListener("change", function(){updateDivCheckbox(document.getElementById("sq-checkbox"),document.getElementById("sq-bits-div"))});
+			document.getElementById("vq-checkbox").addEventListener("change", function(){updateDivCheckbox(document.getElementById("vq-checkbox"),document.getElementById("vq-bits-div"))});
+			document.getElementById("pca-checkbox").addEventListener("change", function(){updateDivCheckbox(document.getElementById("pca-checkbox"),document.getElementById("pca-components-div"))});
+			//document.getElementById("stop-button").disabled = true;
 		})();
 		
-
-
-		function start_realtime() {
+		function startRealtime() {
 			hideAlert();
 			if(active){
 				showAlert("Real-time analysis is already running");
 				return;
 			}
 			let window_value = document.getElementById("win-duration-input").value;
-			//PARSE validity of params
-			//if(parseInt(captureIntervalInput.value)<1 || parseInt(captureIntervalInput.value) >10){
-			//	showAlert("Capture Interval must be an integer in range (1,10)");
-			//	return;
-			//}
-			startButton.classList.add("spinning");
-			startButton.disabled = true;
-			open_websocket_client();
-			//reqTime = parseInt(captureIntervalInput.value);
 			
-			let url = '<%=luci.dispatcher.build_url("admin", "forensics","forensics", "csi_start_realtime")%>'
+			document.getElementById("start-button").classList.add("spinning");
+			document.getElementById("start-button").disabled = true;
+			document.getElementById("save-button").disabled = true;
+			let url = '<%=luci.dispatcher.build_url("admin", "forensics","forensics", "csi_start_realtime")%>';
 			
 			makeCall("POST",url,function(req){
 				if (req.readyState == 4) {
-						startButton.classList.remove("spinning");
+					document.getElementById("start-button").classList.remove("spinning");
 						let response = req.responseText;
 						if (req.status == 200) {
-							console.log("OK")
+							console.log("OK ",response)
 							active = true;
-							stopButton.disabled = false;
+							document.getElementById("stop-button").disabled = false;
 							working_window_duration = window_value;
+							document.getElementById("status-div").innerHTML= (active) ? "Running" : "Stopped";
 						} 
 						else {
 							showAlert(response);
 							active = false;
-							startButton.disabled = false;
-							close_websocket_client();
+							document.getElementById("start-button").disabled = false;
+							document.getElementById("save-button").disabled = false;
 						}
 						
 				}
@@ -190,7 +218,7 @@ end
 		
 		}
 		
-		function stop_realtime() {
+		function stopRealtime() {
 			hideAlert();
 			if(!active){
 				showAlert("Real-time analysis not running");
@@ -202,31 +230,63 @@ end
 			//	showAlert("Capture Interval must be an integer in range (1,10)");
 			//	return;
 			//}
-			stopButton.classList.add("spinning");
-			stopButton.disabled = true;
-			let url = '<%=luci.dispatcher.build_url("admin", "forensics","forensics", "csi_stop_realtime")%>'
-			
+			document.getElementById("stop-button").classList.add("spinning");
+			document.getElementById("stop-button").disabled = true;
+			document.getElementById("save-button").disabled = false;
+			let url = '<%=luci.dispatcher.build_url("admin", "forensics","forensics", "csi_stop_realtime")%>';
 			makeCall("POST",url,function(req){
 				if (req.readyState == 4) {
-						stopButton.classList.remove("spinning");
+					document.getElementById("stop-button").classList.remove("spinning");
 						let response = req.responseText;
 						if (req.status == 200) {
 							console.log("OK")
 							active = false;
-							startButton.disabled = false;
+							document.getElementById("status-div").innerHTML= (active) ? "Running" : "Stopped";
+							document.getElementById("start-button").disabled = false;
+							
 						} 
 						else {
 							showAlert(response);
 							active = true;
-							stopButton.disabled = false;
+							document.getElementById("stop-button").disabled = false;
+							document.getElementById("save-button").disabled = true;
 						}
 						
 				}
 		
 			},document.getElementById("csi-rt-control"),false);
-			close_websocket_client();
 		}
+
+		function saveConfig() {
+			hideAlert();
+			if(active){
+				showAlert("Cannot save while running, stop first");
+				return;
+			}
+
+			document.getElementById("save-button").classList.add("spinning");
+			document.getElementById("save-button").disabled = true;
+			
+			let url = '<%=luci.dispatcher.build_url("admin", "forensics","forensics", "save_csi_realtime_config")%>';
+			makeCall("POST",url,function(req){
+				if (req.readyState == 4) {
+					document.getElementById("save-button").classList.remove("spinning");
+						let response = req.responseText;
+						if (req.status == 200) {
+							console.log("SAVE OK")
+							working_window_duration = document.getElementById("win-duration-input").value;
+						} 
+						else {
+							showAlert(response);
+							
+						}
+						document.getElementById("save-button").disabled = false;
+				}
 		
+			},document.getElementById("csi-rt-control"),false);
+		
+		}
+
 		function showAlert(text){
 			var alert = document.getElementById("realtime-error");
 			alert.style.display = "block";
@@ -255,171 +315,160 @@ end
 			}
 		}
 		
-		function update_duration(){
-			document.querySelector("#update-duration i").classList.remove("clickable");
-			document.querySelector("#update-duration i").classList.add("spinning");
+		function sendUpdateDuration(){
+			document.querySelector("#update-duration-btn i").classList.remove("clickable");
+			document.querySelector("#update-duration-btn i").classList.add("spinning");
+			document.querySelector("#update-duration-btn").onclick = null;
 			let window_value = document.getElementById("win-duration-input").value;
-			let url = '<%=luci.dispatcher.build_url("admin", "forensics", "forensics","csi_update_realtime_duration")%>'
+			let url = '<%=luci.dispatcher.build_url("admin", "forensics", "forensics","csi_update_realtime_duration")%>';
 			makeCall("POST",url,function(req){
 				if (req.readyState == 4) {
-						stopButton.classList.remove("spinning");
-						let response = req.responseText;
-						if (req.status == 200) {
-							console.log("OK "+response)
-							working_window_duration = window_value;
-						} 
-						document.querySelector("#update-duration i").classList.remove("spinning");
-						document.querySelector("#update-duration i").classList.add("clickable");
+					document.getElementById("stop-button").classList.remove("spinning");
+					let response = req.responseText;
+					if (req.status == 200) {
+						console.log("OK "+response);
+						working_window_duration = window_value;
+					} 
+					document.querySelector("#update-duration-btn i").classList.remove("spinning");
+					document.querySelector("#update-duration-btn i").classList.add("clickable");
+					document.querySelector("#update-duration-btn").onclick = sendUpdateDuration;
 				}
 		
 			},document.getElementById("csi-rt-control"),false);
 
 		}
 		
-		function update_bandwidth_select(e){
-			const bandwidths = {"2.4":[20,40],"5":[20,40,80]}
-			var select_bw = document.getElementById("select-bandwidth");
+		function updateBandwidthSelect(e){
+			const bandwidths = {"2.4":[20,40],"5":[20,40,80]};
+			let select_bw = document.getElementById("select-bandwidth");
+			let prev_value = parseInt(select_bw.value);
 			select_bw.innerHTML = ""; //reset the select
-			var bws = bandwidths[this.value];
+			var bws = bandwidths[document.getElementById("select-band").value];
 			bws.forEach(element => {
 				let opt = document.createElement("option");
 				opt.setAttribute("value",element.toString());
 				opt.innerHTML = element.toString()+"MHz";
 				select_bw.appendChild(opt);
 			});
-			select_bw.value = 20;
+			select_bw.value = (bws.includes(prev_value)) ? prev_value : 20;
+			
 		}
 		
-		function update_capture_mode(e){
-			if(this.value == "LIVE"){
+		function updateCaptureMode(e){
+			if(document.getElementById("capture-mode-select").value == "LIVE"){
 				document.getElementById("settings-live-div").style.display="inline";
 				document.getElementById("settings-pcap-div").style.display="none";
 			}
-			else if(this.value=="PCAP"){
+			else if(document.getElementById("capture-mode-select").value=="PCAP"){
 				document.getElementById("settings-live-div").style.display="none";
 				document.getElementById("settings-pcap-div").style.display="inline";
 			}
 		}
 
-		// function to update the chart 
-		
+		function updateDivCheckbox(checkbox, div){
+			if(checkbox.checked){
+				div.style.display = "inline";
+				console.log(div);
+			}
+			else{
+				console.log("NO")
+				div.style.display = "none";
+			}
+		}
 
-		(function init_canvas(chart){
-			x_data_plot = new Array(20).fill(0);
-			y_data_plot = new Array(20).fill(0);
-			canvas.height = 100;
-			const data = {
-			labels: [],
-			datasets: [{
-				label: 'Real-time value',
-				backgroundColor: 'rgb(31, 119, 180)',
-				borderColor: 'rgb(31, 119, 180)',
-				data: [],
-				pointRadius: chart_radius_size,
-			}]
-			};
+		function updateStatusVariables(json_res){
+			//update variables
+			active = json_res["status"];
+			working_window = json_res["win_duration"];
 
-			const chart_options = {
-				animation: {
-                    duration: 0  // Disables animations
-                },
-				scales: {
-     					 x: {
-							type: 'linear',
-        					title: { display: true, text: 'Time(s)' }
-      						},
-      					y: {
-        					title: { display: true, text: 'Value'}
-      					}
-    		}};
-
-			const config = { 
-				type: 'line',
-				data: data,
-				options:chart_options
-			};
-			realtime_chart = new Chart(canvas,config);
 			
-		})();
+			//capture mode
+			document.getElementById("capture-mode-select").value = json_res["capture_mode"];
+			document.getElementById("select-band").value = ("band" in json_res)? json_res["band"] : "2.4";
+			document.getElementById("select-bandwidth").value = ("bandwidth" in json_res)? json_res["bandwidth"] : "20";
+			document.getElementById("input-channel").value = ("channel" in json_res)? json_res["channel"] : "1";
+			document.getElementById("input-pcap").value = ("input_pcap" in json_res)? json_res["input_pcap"] : "";
+			updateCaptureMode();
+			updateBandwidthSelect();
 
-		function process_incoming_data(event){
-			console.log("New data arrived: ",event.data)
-			data = event.data.split(",")
-			data_time = parseFloat(data[1])
-			data_value = parseFloat(data[2])
-			add_point(data_time,data_value);
-		}
+			//compression
 
-		function add_point(x, y) {
-			if(start_x == 0){
-				start_x = x;
-				last_y = y;
-			}
-			if(x < last_x){
-				return;
-			}
-			x_data_plot.push(x-start_x);
-			y_data_plot.push(y-last_y);
-			x_data_plot = x_data_plot.slice(-n_samples_chart);
-			y_data_plot = y_data_plot.slice(-n_samples_chart);
-			//y_data_plot = highPassFilter(y_data_plot);
-			realtime_chart.data.labels = x_data_plot;
-			realtime_chart.data.datasets.forEach((dataset) => {
-					dataset.data = y_data_plot;
-				});
+
+			//proc type and duration
+			document.getElementById("proc-type-select").value = json_res["proc_type"]
+			document.getElementById("win-duration-input").value = parseFloat(json_res["win_duration"]);
+			document.getElementById("status-div").innerHTML= (active) ? "Running" : "Stopped";
 			
-			last_x = x;
-			last_y = y;
-			realtime_chart.update();
-			/*
-			realtime_chart.data.labels.push(x);
-				realtime_chart.data.datasets.forEach((dataset) => {
-					dataset.data.push(y);
-				});
-				realtime_chart.update();
-			*/
-		}
-
-		function open_websocket_client(){
-			ws_client = new WebSocket(ws_address);
-			ws_client.onmessage = process_incoming_data;
-			ws_client.onopen = function(event) { console.log("SUCCESSFULY CONNECTED WS")};
-			ws_client.onclose = handle_close_websocket;
-			ws_client.onerror = handle_error_websocket;
-		}
-		function close_websocket_client(){
-			if(ws_client){
-				ws_client.close()
-			}
-			ws_client = null;
-		}
-
-		function handle_close_websocket(event){
-			console.log("SUCCESSFULY CLOSED WS")
-			active = false;
-		}
-		function handle_error_websocket(event){
-			console.log("ERROR ON WS", event)
-
+			//devices
+			let dev_radios = document.querySelectorAll("#devices-div input");
+			dev_radios.forEach(elem => {elem.checked = false});
+			if("device_select" in json_res)
+				dev_radios[parseInt(json_res["device_select"])].checked = true;
+			else
+				dev_radios[0].checked = true;
+			
 		}
 		
-		function highPassFilter(inputArray) {
-			let cutoffFrequency = 1
-			let samplingRate = 1 / working_window;
-			const RC = 1 / (2 * Math.PI * cutoffFrequency); // Time constant
-			const dt = 1 / samplingRate;                  // Sampling interval
-			const alpha = RC / (RC + dt);                 // Filter coefficient
+		function refreshCurrentStatus(e){
+			document.querySelector("#refresh-status-btn i").classList.remove("clickable");
+			document.querySelector("#refresh-status-btn i").classList.add("spinning");
+			document.querySelector("#refresh-status-btn").onclick = null;
+			disableGUI();
+			let url = '<%=luci.dispatcher.build_url("admin", "forensics", "forensics","get_current_params")%>';
+			makeCall("GET",url,function(req){
+				if (req.readyState == 4) {
+					document.getElementById("stop-button").classList.remove("spinning");
+					let response = req.responseText;
+					if (req.status == 200) {
+						console.log("OK "+response);
+						updateStatusVariables(JSON.parse(JSON.parse(response)));
+						enableGUI();
+					}
+					else if(req.status == 503){
+						console.log(response);
+						active = false;
+						document.getElementById("status-div").innerHTML="Offline";
+					}
+					else{
+						print("ERROR: ",response);
+					}
+					document.querySelector("#refresh-status-btn i").classList.remove("spinning");
+					document.querySelector("#refresh-status-btn i").classList.add("clickable");
+					document.querySelector("#refresh-status-btn").onclick = refreshCurrentStatus;
 
-			const outputArray = new Array(inputArray.length); // Pre-allocate output array
-			outputArray[0] = inputArray[0];                   // Initialize with the first input value
-
-			for (let i = 1; i < inputArray.length; i++) {
-				// Apply the high-pass filter formula
-				outputArray[i] = alpha * (outputArray[i - 1] + inputArray[i] - inputArray[i - 1]);
-			}
-			return outputArray;
+				}		
+			});
 		}
-	
+		
+		function disableGUI(){
+			//buttons
+			document.getElementById("start-button").disabled = true;
+			document.getElementById("stop-button").disabled = true;
+			document.getElementById("save-button").disabled = true;
+			//inputs
+			document.querySelectorAll("input").forEach(e => {e.disabled = true;});
+			document.querySelectorAll("select").forEach(e => {e.disabled = true;});
+
+			//window button
+			document.querySelector("#update-duration-btn i").classList.remove("clickable");
+			document.querySelector("#update-duration-btn").onclick = null;
+		}
+
+		function enableGUI(){
+			//buttons
+			document.getElementById("start-button").disabled = active;
+			document.getElementById("stop-button").disabled = !active;
+			document.getElementById("save-button").disabled = active;
+			//inputs
+			document.querySelectorAll("input").forEach(e => {e.disabled = false;});
+			document.querySelectorAll("select").forEach(e => {e.disabled = false;});
+		
+			//window button
+			document.querySelector("#update-duration-btn i").classList.add("clickable");
+			document.querySelector("#update-duration-btn").onclick = sendUpdateDuration;
+		}
+
+
 	}//closes the window.onload
 })(); //closes the self-calling function (mother of the script)
 </script>
@@ -444,7 +493,7 @@ i.spinning{
 }
 
 .horiz-pad{
-	padding: 0 10 0 0;
+	padding: 0 0 0 10;
 }
 .inline{
 	display:inline;
@@ -454,6 +503,20 @@ i.spinning{
 }
 .center-text{
 	text-align: center;
+}
+.hidden{
+	display:none;
+}
+h5{
+	margin:5 0;
+}
+.bold {
+	font-weight:bold;
+}
+#main-view{
+	padding: 5 20;
+	border: 2px solid black;
+	border-radius:10px;
 }
 </style>
 <%+footer%>
