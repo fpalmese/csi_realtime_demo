@@ -67,3 +67,12 @@ class NexmonManager:
 
 	def get_params(self):
 		return {"band":self.band, "bandwidth":self.bandwidth, "channel":self.channel,"devices":self.devices}
+
+	def get_available_pcaps(self):
+		pcap_dir = "./pcaps"
+		if not os.path.exists(pcap_dir):
+			os.makedirs(pcap_dir)
+		# get the last name of the pcap files in the directory
+		pcap_files = [f for f in os.listdir(pcap_dir) if f.endswith('.pcap')]
+		#print(pcap_files)
+		return pcap_files
