@@ -30,9 +30,9 @@ QPushButton:pressed {
     background-color: #3B4252;
 }
 """
-
-broker_addr= ("nexmon",1883)
-udp_server_addr = ("192.168.178.121", 12345)
+hostname = "192.168.2.224"
+broker_addr= (hostname,1883)
+udp_server_addr = (hostname, 12345)
 
 
 available_pcaps = ["capture1.pcap", "capture2.pcap"]
