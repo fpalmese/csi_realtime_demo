@@ -1,4 +1,5 @@
-This repo contains the code for a Realtime CSI Sniffer and Visualizer
+This repo contains the code for a Realtime CSI Sniffer and Visualizer, part of the Demo paper accepted at EWSN 2025:
+- F. Palmese, A. E. C. Redondi, M. Cesana:"Demo: On-the-fly Extraction and Compression of Network Traffic Traces for Efficient IoT Forensics", EWSN 2025
 
 # Architecture
 The system is composed of three components:
